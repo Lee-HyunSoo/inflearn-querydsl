@@ -1,0 +1,76 @@
+/* querydsl */
+buildscript {
+	ext {
+		queryDslVersion = "5.0.0"
+	}
+}
+
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.7.17'
+	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+	/* querydsl */
+	id "com.ewerk.gradle.plugins.querydsl" version "1.0.10"
+}
+
+group = 'com.jpa'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '11'
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'com.h2database:h2'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	/* querydsl */
+	implementation "com.querydsl:querydsl-jpa:${queryDslVersion}"
+	implementation "com.querydsl:querydsl-apt:${queryDslVersion}"
+
+	/* p6spy */
+	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.5.8'
+}
+
+tasks.named('bootBuildImage') {
+	builder = 'paketobuildpacks/builder-jammy-base:latest'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+/* querydsl */
+/* querydsl 파일 저장할 경로를 String 으로 저장 */
+def querydslDir = "$buildDir/generated/querydsl"
+/* jpa 사용, querydsl 경로 설정 */
+querydsl {
+	jpa = true
+	querydslSourcesDir = querydslDir
+}
+/* main.java.src 폴더 내에서 사용 */
+sourceSets {
+	main.java.srcDir querydslDir
+}
+/* querydsl 컴파일 경로 */
+configurations {
+	querydsl.extendsFrom compileClasspath
+}
+/* 컴파일 */
+compileQuerydsl {
+	options.annotationProcessorPath = configurations.querydsl
+}
